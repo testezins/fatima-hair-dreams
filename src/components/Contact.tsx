@@ -1,8 +1,64 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Phone, MapPin, Clock, MessageSquare, Instagram } from 'lucide-react';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
+
+// Schema de validação do formulário
+const formSchema = z.object({
+  name: z.string().min(3, { message: 'O nome deve ter pelo menos 3 caracteres' }),
+  phone: z.string().min(10, { message: 'Digite um número de telefone válido' }),
+  service: z.string().min(1, { message: 'Selecione um serviço' }),
+  message: z.string().optional(),
+});
 
 const Contact: React.FC = () => {
+  // Inicializar o formulário com react-hook-form
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: '',
+      phone: '',
+      service: '',
+      message: '',
+    },
+  });
+
+  // Função para enviar para o WhatsApp
+  const sendToWhatsApp = (data: z.infer<typeof formSchema>) => {
+    const serviceText = data.service === 'progressiva' 
+      ? 'Progressiva' 
+      : data.service === 'hidratacao' 
+      ? 'Hidratação' 
+      : 'Outro serviço';
+    
+    // Preparar a mensagem
+    let message = `Olá! Meu nome é ${data.name}.\n`;
+    message += `Gostaria de mais informações sobre ${serviceText}.\n`;
+    if (data.message) {
+      message += `Mensagem: ${data.message}\n`;
+    }
+    
+    // Formatar número de telefone para remover caracteres especiais
+    const formattedNumber = '5500000000000';
+    
+    // Preparar a URL do WhatsApp
+    const whatsappUrl = `https://wa.me/${formattedNumber}?text=${encodeURIComponent(message)}`;
+    
+    // Redirecionar para o WhatsApp
+    window.open(whatsappUrl, '_blank');
+  };
+
+  // Handler de submit
+  const onSubmit = (data: z.infer<typeof formSchema>) => {
+    sendToWhatsApp(data);
+  };
+
   return (
     <section id="contato" className="section-padding bg-gradient-to-b from-dark to-dark-light">
       <div className="container-custom">
@@ -87,50 +143,94 @@ const Contact: React.FC = () => {
             <p className="mb-6 text-gray-300">
               Prefere que eu entre em contato com você? Preencha o formulário abaixo:
             </p>
-            <form className="space-y-4">
-              <div>
-                <label htmlFor="name" className="block mb-2 text-sm font-medium">Nome</label>
-                <input 
-                  type="text" 
-                  id="name" 
-                  className="w-full p-3 bg-dark-light border border-gray-700 rounded-md focus:ring-2 focus:ring-brand focus:border-transparent outline-none"
-                  placeholder="Seu nome completo"
+            
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Nome</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Seu nome completo" 
+                          className="w-full p-3 bg-dark-light border border-gray-700 rounded-md focus:ring-2 focus:ring-brand focus:border-transparent outline-none"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage className="text-xs text-red-500" />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div>
-                <label htmlFor="phone" className="block mb-2 text-sm font-medium">WhatsApp</label>
-                <input 
-                  type="tel" 
-                  id="phone" 
-                  className="w-full p-3 bg-dark-light border border-gray-700 rounded-md focus:ring-2 focus:ring-brand focus:border-transparent outline-none"
-                  placeholder="(00) 00000-0000"
+                
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">WhatsApp</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="(00) 00000-0000" 
+                          className="w-full p-3 bg-dark-light border border-gray-700 rounded-md focus:ring-2 focus:ring-brand focus:border-transparent outline-none"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage className="text-xs text-red-500" />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div>
-                <label htmlFor="service" className="block mb-2 text-sm font-medium">Serviço</label>
-                <select 
-                  id="service" 
-                  className="w-full p-3 bg-dark-light border border-gray-700 rounded-md focus:ring-2 focus:ring-brand focus:border-transparent outline-none"
+                
+                <FormField
+                  control={form.control}
+                  name="service"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Serviço</FormLabel>
+                      <FormControl>
+                        <select 
+                          className="w-full p-3 bg-dark-light border border-gray-700 rounded-md focus:ring-2 focus:ring-brand focus:border-transparent outline-none"
+                          {...field}
+                        >
+                          <option value="">Selecione o serviço</option>
+                          <option value="progressiva">Progressiva</option>
+                          <option value="hidratacao">Hidratação</option>
+                          <option value="outro">Outro / Dúvidas</option>
+                        </select>
+                      </FormControl>
+                      <FormMessage className="text-xs text-red-500" />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="message"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Mensagem</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Como posso te ajudar?" 
+                          className="w-full p-3 bg-dark-light border border-gray-700 rounded-md focus:ring-2 focus:ring-brand focus:border-transparent outline-none"
+                          rows={4}
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage className="text-xs text-red-500" />
+                    </FormItem>
+                  )}
+                />
+                
+                <Button 
+                  type="submit" 
+                  className="w-full btn-brand"
                 >
-                  <option value="">Selecione o serviço</option>
-                  <option value="progressiva">Progressiva</option>
-                  <option value="hidratacao">Hidratação</option>
-                  <option value="outro">Outro / Dúvidas</option>
-                </select>
-              </div>
-              <div>
-                <label htmlFor="message" className="block mb-2 text-sm font-medium">Mensagem</label>
-                <textarea 
-                  id="message" 
-                  rows={4}
-                  className="w-full p-3 bg-dark-light border border-gray-700 rounded-md focus:ring-2 focus:ring-brand focus:border-transparent outline-none"
-                  placeholder="Como posso te ajudar?"
-                ></textarea>
-              </div>
-              <button type="submit" className="w-full btn-brand">
-                Enviar Mensagem
-              </button>
-            </form>
+                  Enviar Mensagem
+                </Button>
+              </form>
+            </Form>
           </div>
         </div>
       </div>
